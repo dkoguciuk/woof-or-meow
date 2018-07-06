@@ -48,6 +48,32 @@ if os.path.exists(HOGF_DIR):
     shutil.rmtree(HOGF_DIR)
 os.mkdir(HOGF_DIR)
 
+def __HOG(img, cell_size=(8,8), nbins=9):
+    gx = cv2.Sobel(img, cv2.CV_32F, 1, 0)
+    gy = cv2.Sobel(img, cv2.CV_32F, 0, 1)
+    mag, ang = cv2.cartToPolar(gx, gy)
+    bin = np.int32(nbins*ang/(2*np.pi))
+
+    bin_cells = []
+    mag_cells = []
+
+    cellx, celly = cell_size
+
+    for i in range(0,int(img.shape[0]/celly)):
+        for j in range(0,int(img.shape[1]/cellx)):
+            bin_cells.append(bin[i*celly : i*celly+celly, j*cellx : j*cellx+cellx])
+            mag_cells.append(mag[i*celly : i*celly+celly, j*cellx : j*cellx+cellx])   
+
+    hists = [np.bincount(b.ravel(), m.ravel(), nbins) for b, m in zip(bin_cells, mag_cells)]
+    hist = np.hstack(hists)
+
+    # transform to Hellinger kernel
+    eps = 1e-7
+    hist /= hist.sum() + eps
+    hist = np.sqrt(hist)
+    hist /= cv2.norm(hist) + eps
+
+    return hist
 
 def _HOG(images, image_size):
     """
@@ -60,14 +86,9 @@ def _HOG(images, image_size):
         (ndarray of size [images, features_no]): HOG features for each image.
     """
 
-    WIN_SIZE = (image_size, image_size)
-    BLOCK_SIZE = (image_size/8, image_size/8)
-    BLOCK_STRIDE = (image_size/16, image_size/16)
-    CELL_SIZE = (image_size/16, image_size/16)
     NBINS = 9
-
-    hog_desriptor = cv2.HOGDescriptor(WIN_SIZE, BLOCK_SIZE, BLOCK_STRIDE, CELL_SIZE, NBINS)
-    hog_features = [np.squeeze(hog_desriptor.compute(image)) for image in images]
+    CELL_SIZE = (int(image_size/16), int(image_size/16))
+    hog_features = [__HOG(image, cell_size=CELL_SIZE, nbins=NBINS) for image in images]
     return np.stack(hog_features, axis=0)
 
 def extract_HOG(generator, category='species', image_size=256, train=True, verbose=True):

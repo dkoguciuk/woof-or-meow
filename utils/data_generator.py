@@ -144,7 +144,7 @@ class OxfordIIITPets(object):
         category_labels = {k:v[value_index] for k, v in labels.items()}
         
         # Get instance_number images ==========================================
-        for class_idx in range(1, np.max(category_labels.values())+1):
+        for class_idx in range(1, np.max(list(category_labels.values()))+1):
             class_fnames = [k for k, v in category_labels.items() if v == class_idx]
             class_fnames_random = np.random.choice(class_fnames, size=instance_number)
             class_fpaths = self._get_fpaths_from_fnames(class_fnames_random)
@@ -184,11 +184,11 @@ class OxfordIIITPets(object):
         elif category == 'breeds':
             value_index = 0
         category_labels = {k:v[value_index] for k, v in labels.items()}
-        category_fnames = category_labels.keys()
+        category_fnames = list(category_labels.keys())
         np.random.shuffle(category_fnames)
 
         # What category do we aim for =========================================
-        for batch_idx in range(len(category_fnames)/batch_size):            
+        for batch_idx in range(int(len(category_fnames)/batch_size)):
             batch_fnames = category_fnames[batch_idx * batch_size:(batch_idx + 1) * batch_size]
             batch_fpaths = self._get_fpaths_from_fnames(batch_fnames)
             batch_images = self._imread_and_resize(batch_fpaths, colorspace=self.colorspace, image_size=image_size)

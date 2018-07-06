@@ -30,18 +30,12 @@
 
 import os
 import sys
-import cv2
 import time
-import tqdm
 import argparse
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn import decomposition
-from sklearn.svm import LinearSVC
 from sklearn.manifold import TSNE
-from utils import data_generator as gen
-from utils.models import MLPClassifier
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

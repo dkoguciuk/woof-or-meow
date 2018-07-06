@@ -54,7 +54,10 @@ class InceptionV3(object):
         # placeholder
         self.input_placeholder = tf.placeholder(tf.float32, shape=(None, 299, 299, 3))
         # inception features extractor
-        with tf.device('device:GPU:0'):
+        device = tf.device('device:CPU:0')
+        if tf.test.is_gpu_available():
+            device = tf.device('device:GPU:0')
+        with device:
             with tf.contrib.slim.arg_scope(inception_model.inception_v3_arg_scope()):
                 self.features_extractor, _ = inception_model.inception_v3(self.input_placeholder,
                                                                           num_classes=0, is_training=False)
@@ -165,13 +168,13 @@ def main(argv):
     inception = InceptionV3(sess)
      
     # train
-    print "Calculating features for train dir..."
+    print("Calculating features for train dir...")
     features_train, labels_train = calc_features(True, args['multiplications'], args['augmentation_level'], inception, sess)
     np.save(os.path.join(out_dir, "features_train.npy"), features_train)
     np.save(os.path.join(out_dir, "labels_train.npy"), labels_train)
     
     # test
-    print "Calculating features for train dir..."
+    print("Calculating features for train dir...")
     features_test, labels_test = calc_features(False, 1, 0, inception, sess)
     np.save(os.path.join(out_dir, "features_test.npy"), features_test)
     np.save(os.path.join(out_dir, "labels_test.npy"), labels_test)
