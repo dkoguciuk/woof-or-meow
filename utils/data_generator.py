@@ -86,9 +86,15 @@ class OxfordIIITPets(object):
         return [os.path.join(PETS_DATA_DIR, fname + '.jpg') for fname in fnames]
 
     @staticmethod
-    def _imread_and_resize(fpaths, colorspace='BGR', image_size=64):
-        
-        images = [cv2.imread(fpath) for fpath in fpaths]
+    def _imread_and_resize(fpaths, fnames, colorspace='BGR', image_size=64):
+
+        images = []
+        fnames_valid = []
+        for idx, fpath in enumerate(fpaths):
+            image = cv2.imread(fpath)
+            if image is not None:
+                images.append(image)
+                fnames_valid.append(fnames[idx])
         
         # Resize image ====================================================
         for image_idx in range(len(images)):
@@ -110,7 +116,8 @@ class OxfordIIITPets(object):
                 images[image_idx] = cv2.cvtColor(images[image_idx], cv2.COLOR_BGR2GRAY)
             elif colorspace == 'RGB':
                 images[image_idx] = cv2.cvtColor(images[image_idx], cv2.COLOR_BGR2RGB)
-        return images
+
+        return images, fnames_valid
 
     def get_random_images(self, train=True, instance_number=10, category='species', image_size=64):
         """
@@ -148,7 +155,7 @@ class OxfordIIITPets(object):
             class_fnames = [k for k, v in category_labels.items() if v == class_idx]
             class_fnames_random = np.random.choice(class_fnames, size=instance_number)
             class_fpaths = self._get_fpaths_from_fnames(class_fnames_random)
-            class_images = self._imread_and_resize(class_fpaths, colorspace='BGR', image_size=image_size)
+            class_images, _ = self._imread_and_resize(class_fpaths, class_fnames, colorspace='BGR', image_size=image_size)
             ret.append(class_images)
         
         return ret        
@@ -191,8 +198,8 @@ class OxfordIIITPets(object):
         for batch_idx in range(int(len(category_fnames)/batch_size)):
             batch_fnames = category_fnames[batch_idx * batch_size:(batch_idx + 1) * batch_size]
             batch_fpaths = self._get_fpaths_from_fnames(batch_fnames)
-            batch_images = self._imread_and_resize(batch_fpaths, colorspace=self.colorspace, image_size=image_size)
-            batch_labels = [v-1 for k,v in category_labels.items() if k in batch_fnames]
+            batch_images, batch_fnames_valid = self._imread_and_resize(batch_fpaths, batch_fnames, colorspace=self.colorspace, image_size=image_size)
+            batch_labels = [v-1 for k,v in category_labels.items() if k in batch_fnames_valid]
             yield batch_images, batch_labels
 
     def images_count(self, train=True):
