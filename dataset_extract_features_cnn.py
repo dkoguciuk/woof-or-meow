@@ -3,17 +3,17 @@
 
 # The MIT License (MIT)
 # Copyright (c) 2018 Daniel Koguciuk <daniel.koguciuk@gmail.com>
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -37,12 +37,16 @@ import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 from utils import data_generator as gen
-import slim.nets.inception as inception_model
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FEAT_DIR = os.path.join(BASE_DIR, 'features')
 CNNF_DIR = os.path.join(FEAT_DIR, 'cnn')
+MDLS_DIR = os.path.join(BASE_DIR, 'models')
+RSRC_DIR = os.path.join(MDLS_DIR, 'research')
+SLIM_DIR = os.path.join(RSRC_DIR, 'slim')
+sys.path.append(SLIM_DIR)
+import nets.inception as inception_model
 
 IMAGE_SIZE = 299
 BATCH_SIZE = 4
@@ -101,12 +105,12 @@ def calc_features(train, multiplications, augmentation, inception, sess, categor
         inception (InceptionV3 object): Inception model.
         sess (Tensorflow session): Tensorflow session.
     """
-    
+
     # counter
-    instances_counter = { str(idx) : 0 for idx in range(10)}  
-    
+    instances_counter = { str(idx) : 0 for idx in range(10)}
+
     # for every batch
-    generator = gen.OxfordIIITPets(colorspace='BGR', train_size=0.8)
+    generator = gen.OxfordIIITPets(colorspace='RGB', train_size=0.8)
     batches = generator.images_count(train) / BATCH_SIZE
     all_featrs = []
     all_labels = []
@@ -119,22 +123,22 @@ def calc_features(train, multiplications, augmentation, inception, sess, categor
                 images_augmented, labels_augmented = augment_data_mirror(batch_images, batch_labels)
             else:
                 images_augmented, labels_augmented = batch_images, batch_labels
-            
+
             # norm
             images_normalized = [cv2.normalize(src=image, dst=None, alpha=-1.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
                                  for image in images_augmented]
-            
-            # to tf format 
+
+            # to tf format
             np_images_data = [np.asarray(image_normalized) for image_normalized in images_normalized]
-            
+
             # stack
             tf_images_data = np.stack(np_images_data, axis=0)
-            
+
             # calc features
             features = sess.run(inception.features_extractor, feed_dict={inception.input_placeholder : tf_images_data})
             all_featrs.append(np.squeeze(features))
             all_labels.append(labels_augmented)
-    
+
     # Save it!
     all_featrs = np.concatenate(all_featrs, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
@@ -158,23 +162,23 @@ def main(argv):
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.mkdir(out_dir)
-    
+
     # tf session & graph
     sess = tf.InteractiveSession()
     graph = tf.Graph()
     graph.as_default()
-    
+
     # InceptionV3
     inception = InceptionV3(sess)
-     
+
     # train
     print("Calculating features for train dir...")
     features_train, labels_train = calc_features(True, args['multiplications'], args['augmentation_level'], inception, sess)
     np.save(os.path.join(out_dir, "features_train.npy"), features_train)
     np.save(os.path.join(out_dir, "labels_train.npy"), labels_train)
-    
+
     # test
-    print("Calculating features for train dir...")
+    print("Calculating features for test dir...")
     features_test, labels_test = calc_features(False, 1, 0, inception, sess)
     np.save(os.path.join(out_dir, "features_test.npy"), features_test)
     np.save(os.path.join(out_dir, "labels_test.npy"), labels_test)

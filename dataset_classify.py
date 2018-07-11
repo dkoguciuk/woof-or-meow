@@ -125,7 +125,7 @@ def classify_mlp(features_train, labels_train, features_test, labels_test, epoch
             indices = np.arange(features_train.shape[0])
             features_shuffled = features_train.copy()[indices]
             labels_shuffled = labels_train.copy()[indices]
-            for index in range(len(features_train)/BATCH_SIZE):
+            for index in range(int(len(features_train)/BATCH_SIZE)):
                 features = features_shuffled[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
                 labels = labels_shuffled[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
                 
@@ -152,7 +152,7 @@ def classify_mlp(features_train, labels_train, features_test, labels_test, epoch
         
         accs = []
         #features_test = np.clip((features_test - 0.38) / 10, -1.0, 1.0)
-        for index in range(len(features_test)/BATCH_SIZE):
+        for index in range(int(len(features_test)/BATCH_SIZE)):
             features = features_test[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
             labels = labels_test[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
             pred = sess.run(model_classifier.get_classification_prediction(),
