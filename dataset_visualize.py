@@ -30,18 +30,26 @@
 
 import sys
 import cv2
+import argparse
 import numpy as np
 from utils import data_generator as gen
 
 
 def main(argv):
 
+    # Parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--category", help="what category do you want: species or breeds?", type=str, default='breeds')
+    parser.add_argument("-i", "--instances", help="how many instances of each class do you want to display?", type=int, default=5)
+    parser.add_argument("-s", "--image_size", help="how big should be one image?", type=int, default=128)
+    args = vars(parser.parse_args()) 
+
     # Some variables ==========================================================
     BORDER = 5
-    INSTANCES = 5
     MAX_CLASSES = 5
-    IMAGE_SIZE = 128
-    CATEGORY = 'breeds' #species / breeds
+    CATEGORY = args['category']
+    INSTANCES = args['instances']
+    IMAGE_SIZE = args['image_size']
     
     # Load images =============================================================
     generator = gen.OxfordIIITPets(colorspace='BGR', train_size=0.8)
@@ -69,4 +77,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    
     main(sys.argv[1:])
